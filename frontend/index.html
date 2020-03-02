@@ -1,0 +1,30 @@
+<html>
+
+<head>
+    <title>Subtitles Translator</title>
+</head>
+
+<body>
+    <!-- Replace FUNCTION_URL with actual URL-->
+    <form action="[FUNCTION_URL]"
+        enctype="multipart/form-data" method="post">
+        
+        <label class="file" for="myFile">
+            <input type="file" id="myFile" name="filename"/>            
+        </label>
+
+        <br/><br/>
+        <label for="languages">Language to translate to (en/de/es/it/el etc):
+            <input list="languages" name="language" id="language">
+            <datalist id="languages">
+                <option value="en">
+                <option value="de">
+                <option value="es">
+            </datalist>
+            <input type="submit" value="Translate" />
+        </label>
+    </form>
+
+</body>
+
+</html>

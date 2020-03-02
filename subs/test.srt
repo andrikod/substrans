@@ -1,0 +1,9 @@
+1
+00:00:02,666 --> 00:00:07,333
+Mein Name ist Ernesto Palencia Gómez. Ich bin
+ Anwalt und arbeite bei der Alianza Sierra Madre,
+
+2
+00:00:07,466 --> 00:00:11,000
+einer Organisation in der Hauptstadt
+des Bundesstaates Chihuahua.
