@@ -8,19 +8,13 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 
 	"cloud.google.com/go/translate"
 	"golang.org/x/text/language"
-)
-
-const (
-	Seq = iota
-	Timestamp
-	Text
-	BlankLine
 )
 
 func main() {
@@ -36,6 +30,7 @@ func main() {
 		panic(err)
 	}
 	defer srtFile.Close()
+
 	scanner := bufio.NewScanner(srtFile)
 	scanner.Split(bufio.ScanLines)
 
@@ -48,44 +43,45 @@ func main() {
 	defer transSrtFile.Close()
 	defer transSrtFile.Sync()
 
-	currentType := BlankLine
-	var subTexts []string
 	for scanner.Scan() {
-		line := scanner.Text()
-
-		switch currentType {
-		case Seq:
-			currentType = Timestamp
-			transSrtFile.WriteString(line + "\n")
-		case BlankLine:
-			currentType = Seq
-			transSrtFile.WriteString(line + "\n")
-		case Timestamp:
-			currentType = Text
-			subTexts = append(subTexts, line)
-		case Text:
-			if line == "" {
-				currentType = BlankLine
-
-				trans, err := translateText(targetLanguage, subTexts)
-				if err != nil {
-					panic(err)
-				}
-
-				for i := range subTexts {
-					// fmt.Printf("%s -->  %s \n", subTexts[i], trans[i].Text)
-					transSrtFile.WriteString(trans[i].Text + "\n")
-				}
-				transSrtFile.WriteString(line + "\n")
-
-				subTexts = nil
-			} else {
-				currentType = Text
-				subTexts = append(subTexts, line)
-			}
+		if err := translateBlock(transSrtFile, scanner, targetLanguage); err != nil {
+			panic(err)
 		}
 	}
 
+}
+
+func translateBlock(transSrtFile *os.File, scanner *bufio.Scanner, targetLanguage string) error {
+	// seq
+	transSrtFile.WriteString(scanner.Text() + "\n")
+
+	// timestamp
+	if hasNext := scanner.Scan(); !hasNext {
+		return errors.New("Unexpected end of file")
+	}
+	transSrtFile.WriteString(scanner.Text() + "\n")
+
+	// text
+	var subTexts []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" || line == "\n" {
+			break
+		}
+		subTexts = append(subTexts, line)
+	}
+
+	trans, err := translateText(targetLanguage, subTexts)
+	if err != nil {
+		return err
+	}
+
+	for i := range trans {
+		transSrtFile.WriteString(trans[i].Text + "\n")
+	}
+
+	transSrtFile.WriteString("\n")
+	return nil
 }
 
 func translateText(targetLanguage string, text []string) ([]translate.Translation, error) {
